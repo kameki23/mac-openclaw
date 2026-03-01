@@ -84,11 +84,11 @@
 
         <h3 style="margin:12px 0 8px;font-size:13px;color:#ffd7ee">✅ 毎日の確認チェックリスト</h3>
         <div class="checklist">
-          <div class="item"><span>Telegram/Discord 接続確認</span><span class="done">done</span></div>
-          <div class="item"><span>進行中(doing)タスク件数確認</span><span class="doing">doing</span></div>
-          <div class="item"><span>blocked タスクの有無確認</span><span class="todo">todo</span></div>
-          <div class="item"><span>GitHub Actions 失敗有無</span><span class="todo">todo</span></div>
-          <div class="item"><span>日次コスト(Usage)確認</span><span class="todo">todo</span></div>
+          <div class="item"><span>Telegram 接続確認</span><span class="todo" id="ck-telegram">todo</span></div>
+          <div class="item"><span>進行中(doing)タスク件数</span><span class="doing" id="ck-doing">0件</span></div>
+          <div class="item"><span>blocked タスク件数</span><span class="todo" id="ck-blocked">0件</span></div>
+          <div class="item"><span>GitHub Actions 失敗数</span><span class="todo" id="ck-gh">0件</span></div>
+          <div class="item"><span>最終更新時刻</span><span class="todo" id="ck-updated">-</span></div>
         </div>
       </section>
     </div>
@@ -107,6 +107,36 @@ function palette(){const p=document.getElementById('palette');p.innerHTML='';Obj
 seed();render();palette();
 document.getElementById('layoutBtn').onclick=()=>{for(let y=0;y<H;y++)for(let x=0;x<W;x++)grid[y][x]=(x+y)%2?'floorA':'floorB';seed();render()};
 document.getElementById('clearBtn').onclick=()=>{for(let y=0;y<H;y++)for(let x=0;x<W;x++)grid[y][x]='empty';render()};
+
+function clsByCount(el, count, inverse=false){
+  el.className = (inverse ? (count===0?'done':'todo') : (count>0?'doing':'done'));
+}
+
+async function refreshStatus(){
+  try{
+    const res=await fetch('./status.json?ts='+Date.now());
+    const s=await res.json();
+    const tg=document.getElementById('ck-telegram');
+    tg.textContent = s.telegram==='ok' ? 'done' : (s.telegram==='ng' ? 'todo' : 'unknown');
+    tg.className = s.telegram==='ok' ? 'done' : 'todo';
+
+    const doing=document.getElementById('ck-doing');
+    doing.textContent = `${s.doingTasks}件`;
+    clsByCount(doing, s.doingTasks);
+
+    const blocked=document.getElementById('ck-blocked');
+    blocked.textContent = `${s.blockedTasks}件`;
+    blocked.className = s.blockedTasks===0 ? 'done' : 'todo';
+
+    const gh=document.getElementById('ck-gh');
+    gh.textContent = `${s.githubActionsFailed}件`;
+    gh.className = s.githubActionsFailed===0 ? 'done' : 'todo';
+
+    document.getElementById('ck-updated').textContent = s.updatedAt || '-';
+  }catch(e){/* keep last values */}
+}
+refreshStatus();
+setInterval(refreshStatus,15000);
 </script>
 </body>
 </html>
