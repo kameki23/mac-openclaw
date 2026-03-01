@@ -1,0 +1,34 @@
+name: mac-openclaw-mission-control
+
+on:
+  push:
+    paths:
+      - 'mission-control-pixel/**'
+      - '.github/workflows/mac-openclaw-mission-control.yml'
+  pull_request:
+    paths:
+      - 'mission-control-pixel/**'
+  workflow_dispatch:
+
+jobs:
+  validate-and-artifact:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate HTML exists
+        run: |
+          test -f mission-control-pixel/index.html
+
+      - name: Validate required sidebar/checklist labels
+        run: |
+          grep -q '毎日の確認チェックリスト' mission-control-pixel/index.html
+          grep -q 'GitHub連携状況' mission-control-pixel/index.html
+          grep -q 'ミッション可視化' mission-control-pixel/index.html
+
+      - name: Upload mission-control artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mission-control-pixel
+          path: mission-control-pixel/
