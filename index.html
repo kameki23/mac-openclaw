@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>mac Openclaw - ミッション可視化</title>
+  <style>
+    :root{--bg:#0b0a16;--panel:#17152a;--line:#ff77bf;--txt:#f3eeff;--muted:#b5afd7;--ok:#73e8aa;--doing:#8fbeff;--todo:#ffd784;--tile:18px}
+    *{box-sizing:border-box} body{margin:0;background:radial-gradient(circle at 10% 0%,#241f4b 0%,#100e24 45%,#090814 100%);color:var(--txt);font-family:"Hiragino Kaku Gothic ProN","Yu Gothic UI",sans-serif}
+    .app{display:grid;grid-template-columns:220px 1fr;min-height:100vh}
+
+    .sidebar{background:#131126;border-right:2px solid #4d4674;padding:14px 10px}
+    .logo{font-weight:800;margin:2px 8px 12px;font-size:14px}
+    .menu{display:grid;gap:8px}
+    .menuBtn{padding:10px 12px;border-radius:10px;border:1px solid #4a436f;background:#211d3b;color:#e9e4ff;font-size:13px;text-align:left;cursor:pointer}
+    .menuBtn.active{border-color:#ff8fcc;background:#2b2444;box-shadow:0 0 0 2px #ff8fcc33 inset}
+    .small{font-size:11px;color:var(--muted);margin:10px 8px 0}
+
+    .main{padding:12px}
+    .top{display:flex;justify-content:space-between;align-items:center;background:var(--panel);border:2px solid var(--line);border-radius:12px;padding:10px 12px}
+    .chip{font-size:12px;padding:6px 10px;border-radius:999px;border:1px solid #615a8d;background:#2b2650;color:#d7d0f4}
+
+    .content{margin-top:10px;display:grid;grid-template-columns:1.2fr 360px;gap:12px}
+    .card{background:var(--panel);border:2px solid #4c4572;border-radius:10px;padding:10px}
+
+    .mapWrap{background:#241d18;border:2px solid #7e624d;border-radius:8px;padding:8px;overflow:auto}
+    .map{display:grid;grid-template-columns:repeat(40,var(--tile));grid-template-rows:repeat(24,var(--tile));width:max-content}
+    .tile{width:var(--tile);height:var(--tile);border:1px solid rgba(0,0,0,.05)}
+
+    .agent{position:absolute;width:14px;height:22px;border:2px solid #1a1424;border-radius:4px;z-index:9}.agent::before{content:"";position:absolute;left:2px;top:-8px;width:8px;height:8px;border:2px solid #1a1424;border-radius:2px;background:#ffd8c0}
+    .goat{background:#86e7a6;left:120px;top:270px;animation:walk 1.2s ease-in-out infinite}
+    .cto{background:#c79eff;left:280px;top:270px;animation:type .5s steps(2,end) infinite}
+    .eng{background:#8fc3ff;left:520px;top:100px;animation:work .9s ease-in-out infinite}
+    .res{background:#ffd8a1;left:620px;top:180px;animation:dance .7s ease-in-out infinite alternate}
+    @keyframes walk{0%,100%{transform:translateX(0)}50%{transform:translateX(12px)}} @keyframes type{0%,100%{transform:translateY(0)}50%{transform:translateY(2px)}} @keyframes work{0%,100%{transform:translateY(0)}50%{transform:translateY(6px)}} @keyframes dance{0%{transform:rotate(-8deg)}100%{transform:rotate(8deg)}}
+
+    .palette{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .sw{display:flex;align-items:center;gap:8px;padding:7px;border:1px solid #524b78;border-radius:8px;background:#272243;font-size:12px;cursor:pointer}
+    .dot{width:14px;height:14px;border-radius:3px;border:1px solid #0006}.sw.active{outline:2px solid #ff95cf}
+    .tools{margin-top:8px;display:grid;gap:8px} .btn{padding:9px;border-radius:8px;border:1px solid #6a6298;background:#302a51;color:#efe9ff;font-weight:700;cursor:pointer}
+
+    .checklist{display:grid;gap:8px;margin-top:10px}
+    .item{display:flex;justify-content:space-between;gap:8px;padding:8px;border:1px solid #4f4777;border-radius:8px;background:#252042;font-size:12px}
+    .done{color:var(--ok);font-weight:700}.doing{color:var(--doing);font-weight:700}.todo{color:var(--todo);font-weight:700}
+
+    @media(max-width:1020px){.app{grid-template-columns:1fr}.sidebar{border-right:none;border-bottom:2px solid #4d4674}.content{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="logo">🐰 mac Openclaw</div>
+    <div class="menu">
+      <button class="menuBtn active">ミッション可視化</button>
+      <button class="menuBtn">毎日の確認チェック</button>
+      <button class="menuBtn">タスク進行</button>
+      <button class="menuBtn">エージェント状態</button>
+      <button class="menuBtn">通知・障害対応</button>
+      <button class="menuBtn">GitHub連携状況</button>
+      <button class="menuBtn">設定</button>
+    </div>
+    <div class="small">推奨順: 可視化 → チェック → 進行 → 障害対応</div>
+  </aside>
+
+  <main class="main">
+    <div class="top">
+      <b>ピクセル手作りマップ（背景画像なし編集）</b>
+      <span class="chip" id="sync">SYNC: CHECKLIST</span>
+    </div>
+
+    <div class="content">
+      <section class="card" style="position:relative">
+        <div class="mapWrap"><div class="map" id="map"></div></div>
+        <div class="agent goat"></div><div class="agent cto"></div><div class="agent eng"></div><div class="agent res"></div>
+      </section>
+
+      <section class="card">
+        <h3 style="margin:0 0 8px;font-size:13px;color:#ffd7ee">🎨 サイドバー設定（最高化）</h3>
+        <div class="palette" id="palette"></div>
+        <div class="tools">
+          <button class="btn" id="layoutBtn">推奨レイアウト再生成</button>
+          <button class="btn" id="clearBtn">クリア</button>
+        </div>
+
+        <h3 style="margin:12px 0 8px;font-size:13px;color:#ffd7ee">✅ 毎日の確認チェックリスト</h3>
+        <div class="checklist">
+          <div class="item"><span>Telegram/Discord 接続確認</span><span class="done">done</span></div>
+          <div class="item"><span>進行中(doing)タスク件数確認</span><span class="doing">doing</span></div>
+          <div class="item"><span>blocked タスクの有無確認</span><span class="todo">todo</span></div>
+          <div class="item"><span>GitHub Actions 失敗有無</span><span class="todo">todo</span></div>
+          <div class="item"><span>日次コスト(Usage)確認</span><span class="todo">todo</span></div>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<script>
+const W=40,H=24, mapEl=document.getElementById('map');
+const colors={floorA:'#d2c8af',floorB:'#c8bda3',wall:'#8f6f53',desk:'#7a5437',sofa:'#e7d9ba',server:'#283055',plant:'#4f8a54',lamp:'#f3d48a',empty:'#1f1816'};
+let brush='floorA';
+const grid=Array.from({length:H},(_,y)=>Array.from({length:W},(_,x)=>(x+y)%2?'floorA':'floorB'));
+function rect(x,y,w,h,k){for(let yy=y;yy<y+h;yy++)for(let xx=x;xx<x+w;xx++)if(yy>=0&&yy<H&&xx>=0&&xx<W)grid[yy][xx]=k}
+function seed(){rect(0,0,W,2,'wall');rect(0,H-2,W,2,'wall');rect(0,0,2,H,'wall');rect(W-2,0,2,H,'wall');rect(4,9,7,4,'desk');rect(16,10,6,3,'desk');rect(30,17,6,4,'sofa');rect(30,2,7,6,'server');rect(7,4,2,2,'plant');rect(19,4,2,2,'plant');rect(5,7,1,2,'lamp');rect(22,4,1,2,'lamp')}
+function render(){mapEl.innerHTML='';for(let y=0;y<H;y++)for(let x=0;x<W;x++){const d=document.createElement('div');d.className='tile';d.style.background=colors[grid[y][x]];d.onclick=()=>{grid[y][x]=brush;d.style.background=colors[brush]};mapEl.appendChild(d)}}
+function palette(){const p=document.getElementById('palette');p.innerHTML='';Object.keys(colors).forEach(k=>{const el=document.createElement('div');el.className='sw'+(brush===k?' active':'');el.innerHTML=`<span class="dot" style="background:${colors[k]}"></span><span>${k}</span>`;el.onclick=()=>{brush=k;palette()};p.appendChild(el)})}
+seed();render();palette();
+document.getElementById('layoutBtn').onclick=()=>{for(let y=0;y<H;y++)for(let x=0;x<W;x++)grid[y][x]=(x+y)%2?'floorA':'floorB';seed();render()};
+document.getElementById('clearBtn').onclick=()=>{for(let y=0;y<H;y++)for(let x=0;x<W;x++)grid[y][x]='empty';render()};
+</script>
+</body>
+</html>
