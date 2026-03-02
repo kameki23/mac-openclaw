@@ -22,6 +22,8 @@
 
     .content{margin-top:10px;display:grid;grid-template-columns:1.2fr 360px;gap:12px}
     .card{background:var(--panel);border:2px solid #4c4572;border-radius:10px;padding:10px}
+    .view{display:none}
+    .view.active{display:grid}
 
     .mapWrap{background:#241d18;border:2px solid #7e624d;border-radius:8px;padding:8px;overflow:auto}
     .map{display:grid;grid-template-columns:repeat(40,var(--tile));grid-template-rows:repeat(24,var(--tile));width:max-content}
@@ -50,14 +52,14 @@
 <div class="app">
   <aside class="sidebar">
     <div class="logo">🐰 mac Openclaw</div>
-    <div class="menu">
-      <button class="menuBtn active">ミッション可視化</button>
-      <button class="menuBtn">毎日の確認チェック</button>
-      <button class="menuBtn">タスク進行</button>
-      <button class="menuBtn">エージェント状態</button>
-      <button class="menuBtn">通知・障害対応</button>
-      <button class="menuBtn">GitHub連携状況</button>
-      <button class="menuBtn">設定</button>
+    <div class="menu" id="menu">
+      <button class="menuBtn active" data-view="mission">ミッション可視化</button>
+      <button class="menuBtn" data-view="check">毎日の確認チェック</button>
+      <button class="menuBtn" data-view="tasks">タスク進行</button>
+      <button class="menuBtn" data-view="agents">エージェント状態</button>
+      <button class="menuBtn" data-view="alerts">通知・障害対応</button>
+      <button class="menuBtn" data-view="github">GitHub連携状況</button>
+      <button class="menuBtn" data-view="settings">設定</button>
     </div>
     <div class="small">推奨順: 可視化 → チェック → 進行 → 障害対応</div>
   </aside>
@@ -68,21 +70,24 @@
       <span class="chip" id="sync">SYNC: CHECKLIST</span>
     </div>
 
-    <div class="content">
+    <div class="content view active" id="view-mission">
       <section class="card" style="position:relative">
         <div class="mapWrap"><div class="map" id="map"></div></div>
         <div class="agent goat"></div><div class="agent cto"></div><div class="agent eng"></div><div class="agent res"></div>
       </section>
 
       <section class="card">
-        <h3 style="margin:0 0 8px;font-size:13px;color:#ffd7ee">🎨 サイドバー設定（最高化）</h3>
+        <h3 style="margin:0 0 8px;font-size:13px;color:#ffd7ee">🎨 ピクセル編集</h3>
         <div class="palette" id="palette"></div>
         <div class="tools">
           <button class="btn" id="layoutBtn">推奨レイアウト再生成</button>
           <button class="btn" id="clearBtn">クリア</button>
         </div>
+      </section>
+    </div>
 
-        <h3 style="margin:12px 0 8px;font-size:13px;color:#ffd7ee">✅ 毎日の確認チェックリスト</h3>
+    <div class="content view" id="view-check">
+      <section class="card"><h3>✅ 毎日の確認チェックリスト</h3>
         <div class="checklist">
           <div class="item"><span>Telegram 接続確認</span><span class="todo" id="ck-telegram">todo</span></div>
           <div class="item"><span>進行中(doing)タスク件数</span><span class="doing" id="ck-doing">0件</span></div>
@@ -91,7 +96,21 @@
           <div class="item"><span>最終更新時刻</span><span class="todo" id="ck-updated">-</span></div>
         </div>
       </section>
+      <section class="card"><h3>📌 運用メモ</h3><div class="checklist"><div class="item"><span>朝いち確認</span><span class="done">done</span></div><div class="item"><span>昼チェック</span><span class="todo">todo</span></div><div class="item"><span>夜サマリー</span><span class="todo">todo</span></div></div></section>
     </div>
+
+    <div class="content view" id="view-tasks">
+      <section class="card"><h3>🧾 タスク進行</h3><div class="checklist" id="task-list"><div class="item"><span>OpenGoatから読み込み中…</span><span class="doing">doing</span></div></div></section>
+      <section class="card"><h3>📊 集計</h3><div class="checklist"><div class="item"><span>doing</span><span id="sum-doing" class="doing">0件</span></div><div class="item"><span>blocked</span><span id="sum-blocked" class="todo">0件</span></div></div></section>
+    </div>
+
+    <div class="content view" id="view-agents"><section class="card"><h3>🤖 エージェント状態</h3><div class="checklist"><div class="item"><span>goat</span><span class="doing">指示中</span></div><div class="item"><span>cto</span><span class="doing">統括中</span></div><div class="item"><span>engineer</span><span class="doing">実装中</span></div><div class="item"><span>researcher</span><span class="doing">調査中</span></div></div></section><section class="card"><h3>🗺 役割</h3><div class="checklist"><div class="item"><span>指揮系統</span><span class="done">goat→cto→各担当</span></div></div></section></div>
+
+    <div class="content view" id="view-alerts"><section class="card"><h3>🚨 通知・障害対応</h3><div class="checklist"><div class="item"><span>Telegram</span><span id="al-tg" class="todo">確認中</span></div><div class="item"><span>GitHub Actions失敗</span><span id="al-gh" class="todo">確認中</span></div></div></section><section class="card"><h3>🛠 対応フロー</h3><div class="checklist"><div class="item"><span>1. 状態確認</span><span class="done">openclaw status</span></div><div class="item"><span>2. ログ確認</span><span class="doing">openclaw logs</span></div></div></section></div>
+
+    <div class="content view" id="view-github"><section class="card"><h3>🐙 GitHub連携状況</h3><div class="checklist"><div class="item"><span>リポジトリ</span><span class="done">kameki23/mac-openclaw</span></div><div class="item"><span>最新Actions</span><span id="gh-latest" class="doing">取得中</span></div></div></section><section class="card"><h3>🔁 自動化</h3><div class="checklist"><div class="item"><span>status更新</span><span class="done">launchd 5分</span></div></div></section></div>
+
+    <div class="content view" id="view-settings"><section class="card"><h3>⚙ 設定</h3><div class="checklist"><div class="item"><span>自動更新間隔</span><span class="done">15秒</span></div><div class="item"><span>タイルサイズ</span><span class="done">18px</span></div></div></section><section class="card"><h3>💾 メモ</h3><div class="checklist"><div class="item"><span>次回追加</span><span class="todo">Undo/Redo</span></div></div></section></div>
   </main>
 </div>
 
@@ -133,8 +152,30 @@ async function refreshStatus(){
     gh.className = s.githubActionsFailed===0 ? 'done' : 'todo';
 
     document.getElementById('ck-updated').textContent = s.updatedAt || '-';
+    const sumDoing=document.getElementById('sum-doing'); if(sumDoing) sumDoing.textContent=`${s.doingTasks}件`;
+    const sumBlocked=document.getElementById('sum-blocked'); if(sumBlocked) sumBlocked.textContent=`${s.blockedTasks}件`;
+    const alTg=document.getElementById('al-tg'); if(alTg){alTg.textContent = s.telegram==='ok'?'正常':'要確認'; alTg.className=s.telegram==='ok'?'done':'todo';}
+    const alGh=document.getElementById('al-gh'); if(alGh){alGh.textContent = s.githubActionsFailed===0?'なし':'あり'; alGh.className=s.githubActionsFailed===0?'done':'todo';}
+    const ghLatest=document.getElementById('gh-latest'); if(ghLatest){ghLatest.textContent=s.githubActionsFailed===0?'success':'failureあり'; ghLatest.className=s.githubActionsFailed===0?'done':'todo';}
+
+    const taskList=document.getElementById('task-list');
+    if(taskList){
+      taskList.innerHTML = `
+        <div class="item"><span>進行中タスク</span><span class="doing">${s.doingTasks}件</span></div>
+        <div class="item"><span>ブロック中タスク</span><span class="${s.blockedTasks===0?'done':'todo'}">${s.blockedTasks}件</span></div>
+      `;
+    }
   }catch(e){/* keep last values */}
 }
+function switchView(name){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  const target=document.getElementById('view-'+name);
+  if(target) target.classList.add('active');
+  document.querySelectorAll('.menuBtn').forEach(b=>b.classList.toggle('active', b.dataset.view===name));
+}
+
+document.querySelectorAll('.menuBtn').forEach(btn=>btn.addEventListener('click',()=>switchView(btn.dataset.view)));
+
 refreshStatus();
 setInterval(refreshStatus,15000);
 </script>
