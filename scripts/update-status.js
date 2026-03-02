@@ -24,9 +24,9 @@ function run(cmd, args, timeout = 8000) {
   let blockedTasks = 0;
   let githubActionsFailed = 0;
 
-  const status = await run(OPENCLAW, ['status']);
-  if (/Telegram\s*\|\s*ON\s*\|\s*OK/.test(status)) telegram = 'ok';
-  else if (/Telegram\s*\|\s*ON\s*\|/.test(status)) telegram = 'ng';
+  const status = await run(OPENCLAW, ['status'], 15000);
+  if (/Telegram[\s\S]*ON[\s\S]*OK/.test(status)) telegram = 'ok';
+  else if (/Telegram[\s\S]*ON/.test(status)) telegram = 'ng';
 
   const tasksRaw = await run(OPENGOAT, ['task', 'list', '--json']);
   try {
